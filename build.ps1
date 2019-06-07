@@ -1,7 +1,7 @@
 # thanks to http://ramblingcookiemonster.github.io/Building-A-PowerShell-Module/
 
 Function Resolve-Module {
-    [Cmdletbinding()]
+    [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [String]
@@ -61,6 +61,7 @@ Function Resolve-Module {
     }
 }
 
+Write-Output -InputObject "Setting up build dependencies"
 Get-PackageProvider -Name NuGet -ForceBootstrap > $null
 if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     Write-Verbose -Message "Setting PSGallery as a trusted repository"
@@ -73,10 +74,12 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'Pester',
     'BuildHelpers',
     'PSScriptAnalyzer',
-    'powershell-yaml'
+    [PSCustomObject]@{ Name = 'powershell-yaml'; Version = '0.3.6' }  # Appveyor seems to have issues with newer versions
 ) | Resolve-Module
 
+Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
 
+Write-Output -InputObject "Starting build"
 Invoke-psake .\psake.ps1
 exit ( [int]( -not $psake.build_success ) )

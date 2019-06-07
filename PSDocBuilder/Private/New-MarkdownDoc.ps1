@@ -71,18 +71,20 @@ Function New-MarkdownDoc {
 
         # The metadata values don't match what we actually display.
         $parameter_sets = [Ordered]@{}
-        foreach ($set in $parameter.parameter_sets.GetEnumerator()) {
+        $ps_keys = $parameter.parameter_sets.Keys | Sort-Object
+        foreach ($key in $ps_keys) {
+            $set = $parameter.parameter_sets.$key
             $pipeline_input = "False"
-            if ($set.Value.pipeline_inputs.Count -gt 0) {
-                $pipeline_input = "True ({0})" -f ($set.Value.pipeline_inputs -join ", ")
+            if ($set.pipeline_inputs.Count -gt 0) {
+                $pipeline_input = "True ({0})" -f ($set.pipeline_inputs -join ", ")
             }
 
             $set_info = [Ordered]@{
-                Required = if ($set.Value.required) { "True" } else { "False" }
-                Position = if ($null -eq $set.Value.position) { "Named" } else { $set.Value.position }
+                Required = if ($set.required) { "True" } else { "False" }
+                Position = if ($null -eq $set.position) { "Named" } else { $set.position }
                 "Accept pipeline input" = $pipeline_input
             }
-            $parameter_sets.Add($set.Key, $set_info)
+            $parameter_sets.Add($key, $set_info)
         }
 
         $extra_info = [Ordered]@{

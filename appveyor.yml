@@ -1,18 +1,9 @@
 # Publish to PowerShell Gallery with this key
 environment:
-  global:
-    NuGetApiKey:
-      secure: VMvVbhuMaUTbI8WgnJH/WF7UBGwj261AgERGm25s21zQErHoIdwacoF3yd6OjIWh
-
-  # Run tests on both PowerShell 5.1 and PowerShell 6
-  matrix:
-  - PS_EXE: powershell.exe
-  - PS_EXE: pwsh.exe
+  NuGetApiKey:
+    secure: VMvVbhuMaUTbI8WgnJH/WF7UBGwj261AgERGm25s21zQErHoIdwacoF3yd6OjIWh
 
 image: Visual Studio 2017
-
-# specify the cloned folder in upper case so the PSGallery upload is in this format
-clone_folder: c:\projects\PSDocBuilder
 
 # Skip on updates to the readme.
 skip_commits:
@@ -23,4 +14,20 @@ skip_commits:
 build: false
 
 test_script:
-- ps: Start-Process -FilePath $env:PS_EXE -ArgumentList '-File build.ps1' -Wait -NoNewWindow
+- ps: . ./build.ps1
+- pwsh: . ./build.ps1
+- ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags AppVeyor
+
+before_deploy:
+# Deploys the nupkg to PSGallery
+- ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags Release
+
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: xLTg9M5bqlSITC5gJHWUD4wOqP1QPsjMQSTiWdCZI68Iflp3lemZ9Au5riRvbZl
+  artifact: /.*\.nupkg/
+  force_update: true
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true
