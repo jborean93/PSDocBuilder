@@ -1,7 +1,7 @@
 # thanks to http://ramblingcookiemonster.github.io/Building-A-PowerShell-Module/
 
 Function Resolve-Module {
-    [Cmdletbinding()]
+    [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [String]
@@ -74,7 +74,7 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'Pester',
     'BuildHelpers',
     'PSScriptAnalyzer',
-    'powershell-yaml'
+    [PSCustomObject]@{ Name = 'powershell-yaml'; Version = '0.3.7' }
 ) | Resolve-Module -Verbose
 
 Write-Output -InputObject "Setting build environment variables"
