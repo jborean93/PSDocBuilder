@@ -108,7 +108,7 @@ if (-not $DeploymentRoot) {
     return
 }
 
-Write-Host "Executing Deploy`n----------------------------------------------------------------------`n"
+Write-Host "`nExecuting Deploy`n----------------------------------------------------------------------`n"
 
 # Need to import the current module so we can generate the build artifact
 Import-Module -Name $PSScriptRoot\PSDocBuilder\PSDocBuilder.psd1 -Force
@@ -138,30 +138,23 @@ if ($is_release) {
 # Verify we can import the module
 Import-Module -Name $module_path -Force
 
-# Publish to AppVeyor if we're in AppVeyor
-if ("AppVeyor" -in $Tags) {
-    Deploy DeveloperBuild {
-        By AppVeyorModule {
-            FromSource $module_path
-            To AppVeyor
-            WithOptions @{
-                SourceIsAbsolute = $true
-                Version = $env:APPVEYOR_BUILD_VERSION
-            }
+Deploy Module {
+    By AppVeyorModule {
+        FromSource $module_path
+        To AppVeyor
+        WithOptions @{
+            SourceIsAbsolute = $true
+            Version = $env:APPVEYOR_BUILD_VERSION
         }
+        Tagged AppVeyor
     }
-}
-
-# Publish to the PowerShell Gallery if the 'Release' tag is set
-if ($is_release) {
-    Deploy Module {
-        By PSGalleryModule {
-            FromSource $module_path
-            To PSGallery
-            WithOptions @{
-                ApiKey = $env:NugetApiKey
-                SourceIsAbsolute = $true
-            }
+    By PSGalleryModule {
+        FromSource $module_path
+        To PSGallery
+        WithOptions @{
+            ApiKey = $env:NugetApiKey
+            SourceIsAbsolute = $true
         }
+        Tagged Release
     }
 }
