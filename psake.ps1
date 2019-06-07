@@ -89,11 +89,11 @@ Task Test -Depends Sanity {
 }
 
 Task Build -Depends Test {
-    $module_name = Split-Path -Path $env:BHModulePath -Leaf
+    $module_name = (Get-ChildItem -Path ([System.IO.Path]::Combine($env:BHModulePath, '*.psd1'))).BaseName
     $build_path = [System.IO.Path]::Combine($ProjectRoot, "Build", $module_name)
 
     $lines
-    "$nl`tSTATUS: Building PowerShell module with documentation"
+    "$nl`tSTATUS: Building PowerShell module with documentation to '$build_path'"
 
     if (Test-Path -LiteralPath $build_path) {
         Remove-Item -LiteralPath $build_path -Force -Recurse
