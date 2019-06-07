@@ -3,7 +3,7 @@
 
 Deploy Module {
     By AppVeyorModule {
-        FromSource (Join-Path -Path $DeploymentRoot -ChildPath Build)
+        FromSource ([System.IO.Path]::Combine($DeploymentRoot, 'Build', '*.psd1'))
         To AppVeyor
         WithOptions @{
             SourceIsAbsolute = $true
@@ -13,7 +13,7 @@ Deploy Module {
     }
 
     By PSGalleryModule {
-        FromSource (Join-Path -Path $DeploymentRoot -ChildPath Build)
+        FromSource ([System.IO.Path]::Combine($DeploymentRoot, 'Build', '*.psd1'))
         To PSGallery
         WithOptions @{
             ApiKey = $env:NugetApiKey
