@@ -132,14 +132,14 @@ Aliases: None
 Default value: None
 Accept wildcard characters: False
 Parameter Sets:
-  TestPS3:
-    Required: True
-    Position: 1
-    Accept pipeline input: False
   (All):
     Required: False
     Position: Named
     Accept pipeline input: True (ByPropertyName)
+  TestPS3:
+    Required: True
+    Position: 1
+    Accept pipeline input: False
 ```
 
 ### -Default
