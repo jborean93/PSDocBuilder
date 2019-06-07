@@ -61,6 +61,7 @@ Function Resolve-Module {
     }
 }
 
+Write-Output -InputObject "Setting up build dependencies"
 Get-PackageProvider -Name NuGet -ForceBootstrap > $null
 if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     Write-Verbose -Message "Setting PSGallery as a trusted repository"
@@ -76,7 +77,9 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'powershell-yaml'
 ) | Resolve-Module
 
+Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
 
+Write-Output -InputObject "Starting build"
 Invoke-psake .\psake.ps1
 exit ( [int]( -not $psake.build_success ) )
