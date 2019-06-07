@@ -108,7 +108,7 @@ if (-not $DeploymentRoot) {
     return
 }
 
-Write-Output -InputObject "Executing Deploy`n----------------------------------------------------------------------`n"
+Write-Host "Executing Deploy`n----------------------------------------------------------------------`n"
 
 # Need to import the current module so we can generate the build artifact
 Import-Module -Name $PSScriptRoot\PSDocBuilder\PSDocBuilder.psd1 -Force
