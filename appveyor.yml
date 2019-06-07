@@ -23,4 +23,4 @@ skip_commits:
 build: false
 
 test_script:
-- ps: '& $env:PS_EXE ./build.ps1 -Verbose'
+- ps: '& $env:PS_EXE ./build.ps1'

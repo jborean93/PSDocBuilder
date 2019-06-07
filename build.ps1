@@ -75,7 +75,7 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'BuildHelpers',
     'PSScriptAnalyzer',
     'powershell-yaml'
-) | Resolve-Module
+) | Resolve-Module -Verbose
 
 Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
