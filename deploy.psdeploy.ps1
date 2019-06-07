@@ -14,8 +14,6 @@
 #     - RepoFolder.psd1
 #
 # * Nuget key in $ENV:NugetApiKey
-#
-# * Set-BuildEnvironment from BuildHelpers module has populated ENV:BHPSModulePath and related variables
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '',
     Justification='Required in PSDeploy, cannot output to a stream')]
@@ -106,7 +104,7 @@ Function Optimize-Project {
 }
 
 # Do nothing if the env variable is not set
-if (-not $env:BHProjectPath) {
+if (-not $DeploymentRoot) {
     return
 }
 
@@ -116,18 +114,20 @@ Write-Output -InputObject "Executing Deploy`n-----------------------------------
 Import-Module -Name $PSScriptRoot\PSDocBuilder\PSDocBuilder.psd1 -Force
 
 # Ensure dir to store Markdown docs exists
-$doc_path = Join-Path -Path $env:BHProjectPath -ChildPath 'Docs'
+$doc_path = Join-Path -Path $DeploymentRoot -ChildPath 'Docs'
 if (-not (Test-Path -LiteralPath $doc_path)) {
     New-Item -Path $doc_path -ItemType Directory > $null
 }
 
 # Create dir to store a copy of the build artifact
-$build_path = Join-Path -Path $env:BHProjectPath -ChildPath 'Build'
+$build_path = Join-Path -Path $DeploymentRoot -ChildPath 'Build'
 if (Test-Path -LiteralPath $build_path) {
     Remove-Item -LiteralPath $build_path -Force -Recurse
 }
 New-Item -Path $build_path -ItemType Directory > $null
-Copy-Item -LiteralPath $env:BHModulePath -Destination $build_path -Recurse
+
+$module_name = Split-Path $DeploymentRoot -Leaf
+Copy-Item -LiteralPath (Join-Path -Path $DeploymentRoot -ChildPath $module_name) -Destination $build_path -Recurse
 $module_path = Optimize-Project -Path $build_path -DocPath $doc_path
 
 $is_release = "Release" -in $Tags
@@ -138,20 +138,8 @@ if ($is_release) {
 # Verify we can import the module
 Import-Module -Name $module_path -Force
 
-# Publish to the PowerShell Gallery if the 'Release' tag is set
-if ($is_release) {
-    Deploy Module {
-        By PSGalleryModule {
-            FromSource $module_path
-            To PSGallery
-            WithOptions @{
-                ApiKey = $ENV:NugetApiKey
-                SourceIsAbsolute = $true
-            }
-        }
-    }
-} elseif ($env:BHBuildSystem -eq 'AppVeyor') {
-    # Publish to AppVeyor if we're in AppVeyor
+# Publish to AppVeyor if we're in AppVeyor
+if ("AppVeyor" -in $Tags) {
     Deploy DeveloperBuild {
         By AppVeyorModule {
             FromSource $module_path
@@ -159,6 +147,20 @@ if ($is_release) {
             WithOptions @{
                 SourceIsAbsolute = $true
                 Version = $env:APPVEYOR_BUILD_VERSION
+            }
+        }
+    }
+}
+
+# Publish to the PowerShell Gallery if the 'Release' tag is set
+if ($is_release) {
+    Deploy Module {
+        By PSGalleryModule {
+            FromSource $module_path
+            To PSGallery
+            WithOptions @{
+                ApiKey = $env:NugetApiKey
+                SourceIsAbsolute = $true
             }
         }
     }
