@@ -77,6 +77,8 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'powershell-yaml'
 ) | Resolve-Module
 
+Import-Module -Name powershell-yml -Force
+
 Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
 
