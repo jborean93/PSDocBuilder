@@ -74,7 +74,7 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'Pester',
     'BuildHelpers',
     'PSScriptAnalyzer',
-    [PSCustomObject]@{ Name = 'powershell-yaml'; Version = '0.3.7' }
+    [PSCustomObject]@{ Name = 'powershell-yaml'; Version = '0.3.6' }  # Appveyor seems to have issues with newer versions
 ) | Resolve-Module -Verbose
 
 Write-Output -InputObject "Setting build environment variables"
