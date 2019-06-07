@@ -89,7 +89,8 @@ Task Test -Depends Sanity {
 }
 
 Task Build -Depends Test {
-    $build_path = [System.IO.Path]::Combine($ProjectRoot, "Build")
+    $module_name = Split-Path -Path $env:BHModulePath -Leaf
+    $build_path = [System.IO.Path]::Combine($ProjectRoot, "Build", $module_name)
 
     $lines
     "$nl`tSTATUS: Building PowerShell module with documentation"
@@ -107,7 +108,6 @@ Task Build -Depends Test {
         New-Item -Path $doc_path -ItemType Directory > $null
     }
 
-    $module_name = Split-Path -Path $env:BHModulePath -Leaf
     $manifest_file_path = [System.IO.Path]::Combine($env:BHModulePath, "$($module_name).psd1")
     Copy-Item -LiteralPath $manifest_file_path -Destination ([System.IO.Path]::Combine($build_path, "$($module_name).psd1"))
 
