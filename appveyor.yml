@@ -23,4 +23,4 @@ skip_commits:
 build: false
 
 test_script:
-- ps: Start-Process -FilePath $env:PS_EXE -ArgumentList '-File build.ps1' -Wait -NoNewWindow
+- ps: & $env:PS_EXE ./build.ps1
