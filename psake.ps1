@@ -2,8 +2,105 @@
     Justification="Global vars are used outside of where they are declared")]
 Param ()
 
-# PSake makes variables declared here available in other scriptblocks
-# Init some things
+####################
+# HELPER FUNCTIONS #
+####################
+
+Function Optimize-Project {
+    Param (
+        [Parameter(Mandatory=$true)]
+        [String]
+        $Path,
+
+        [Parameter(Mandatory=$true)]
+        [String]
+        $DocPath
+    )
+
+    $repo_name = (Get-ChildItem -LiteralPath $Path -Directory -Exclude @('Build', 'Docs', 'Tests')).Name
+    $module_path = Join-Path -Path $Path -ChildPath $repo_name
+    if (-not (Test-Path -LiteralPath $module_path -PathType Container)) {
+        Write-Error -Message "Failed to find the module at the expected path '$module_path'"
+        return
+    }
+
+    # Build the initial manifest file and get the current export signature
+    $manifest_file_path = Join-Path -Path $module_path -ChildPath "$($repo_name).psm1"
+    if (-not (Test-Path -LiteralPath $manifest_file_path -PathType Leaf)) {
+        Write-Error -Message "Failed to find the module's psm1 file at the expected path '$manifest_file_path'"
+        return
+    }
+
+    $manifest_pre_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $manifest_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $manifest_post_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $template_section = $false  # $false == pre, $null == template, $true == post
+
+    foreach ($manifest_file_line in (Get-Content -LiteralPath $manifest_file_path)) {
+        if ($manifest_file_line -eq '### TEMPLATED EXPORT FUNCTIONS ###') {
+            $template_section = $null
+        } elseif ($manifest_file_line -eq '### END TEMPLATED EXPORT FUNCTIONS ###') {
+            $template_section = $true
+        } elseif ($template_section -eq $false) {
+            $manifest_pre_template_lines.Add($manifest_file_line)
+        } elseif ($template_section -eq $true) {
+            $manifest_post_template_lines.Add($manifest_file_line)
+        }
+    }
+
+    # Read each public and private function and add it to the manifest template
+    $public_module_names = [System.Collections.Generic.List`1[String]]@()
+    $public_functions_path = Join-Path -Path $module_path -ChildPath Public
+    $private_functions_path = Join-Path -Path $module_path -ChildPath Private
+
+    $public_functions_path, $private_functions_path | ForEach-Object -Process {
+
+        if (Test-Path -LiteralPath $_) {
+            Format-FunctionWithDoc -Path "$_\*.ps1" | ForEach-Object -Process {
+
+                $manifest_template_lines.Add($_.Function)
+                $manifest_template_lines.Add("")  # Add an empty newline so the functions are spaced out.
+
+                $parent = Split-Path -Path (Split-Path -Path $_.Source -Parent) -Leaf
+                if ($parent -eq 'Public') {
+                    $public_module_names.Add($_.Name)
+                    $module_doc_path = Join-Path -Path $doc_path -ChildPath "$($_.Name).md"
+                    Set-Content -LiteralPath $module_doc_path -Value $_.Markdown
+                }
+            }
+        }
+    }
+
+    # Make sure we add an array of all the public functions and place it in our template. This is so the
+    # Export-ModuleMember line at the end exports the correct functions.
+    $manifest_template_lines.Add('$public_functions = @(')
+    for ($i = 0; $i -lt $public_module_names.Count - 1; $i++) {
+        $manifest_template_lines.Add('    ''{0}'',' -f $public_module_names[$i])
+    }
+    $manifest_template_lines.Add('    ''{0}''' -f $public_module_names[-1])
+    $manifest_template_lines.Add(')')
+
+    # Now build the new manifest file lines by adding the templated and post templated lines to the 1 list.
+    $manifest_pre_template_lines.AddRange($manifest_template_lines)
+    $manifest_pre_template_lines.AddRange($manifest_post_template_lines)
+    $manifest_file = $manifest_pre_template_lines -join [System.Environment]::NewLine
+
+    # Now replace the manifest file with our new copy and remove the public and private folders
+    if (Test-Path -LiteralPath $private_functions_path) {
+        Remove-Item -LiteralPath $private_functions_path -Force -Recurse
+    }
+    if (Test-Path -LiteralPath $public_functions_path) {
+        Remove-Item -LiteralPath $public_functions_path -Force -Recurse
+    }
+    Set-Content -LiteralPath $manifest_file_path -Value $manifest_file
+
+    return $module_path
+}
+
+###############
+# psake Tasks #
+###############
+
 Properties {
     # Find the build folder based on build system
     $ProjectRoot = $env:BHProjectPath
@@ -11,9 +108,7 @@ Properties {
         $ProjectRoot = $PSScriptRoot
     }
 
-    $Timestamp = Get-Date -UFormat "%Y%m%d-%H%M%S"
-    $PSVersion = $PSVersionTable.PSVersion.Major
-    $TestFile = "TestResults_PS$PSVersion`_$TimeStamp.xml"
+    $nl = [System.Environment]::NewLine
     $lines = '----------------------------------------------------------------------'
 
     $Verbose = @{}
@@ -22,7 +117,7 @@ Properties {
     }
 }
 
-Task Default -Depends Test
+Task Default -Depends Build
 
 Task Init {
     $lines
@@ -30,17 +125,12 @@ Task Init {
     "Build System Details:"
     Get-Item -Path env:BH*
 
-    $build_path = [System.IO.Path]::Combine($ProjectRoot, "Build")
-    if (Test-Path -LiteralPath $build_path) {
-        Remove-Item -LiteralPath $build_path -Force -Recurse
-    }
-
-    "`n"
+    $nl
 }
 
 Task Sanity -Depends Init {
     $lines
-    "`n`tSTATUS: Sanity tests with PSScriptAnalyzer"
+    "$nl`tSTATUS: Sanity tests with PSScriptAnalyzer"
 
     $pssa_params = @{
         ErrorAction = "SilentlyContinue"
@@ -52,12 +142,14 @@ Task Sanity -Depends Init {
         $results | Out-String
         Write-Error "Failed PsScriptAnalyzer tests, build failed"
     }
-    "`n"
+    $nl
 }
 
-Task Test -Depends Sanity  {
+Task Test -Depends Sanity {
+    $PSVersion = $PSVersionTable.PSVersion.Major
+
     $lines
-    "`n`tSTATUS: Testing with PowerShell $PSVersion"
+    "$nl`tSTATUS: Testing with PowerShell $PSVersion"
 
     # Gather test results. Store them in a variable and file
     $public_path = [System.IO.Path]::Combine($env:BHModulePath, "Public")
@@ -70,30 +162,106 @@ Task Test -Depends Sanity  {
         $code_coverage.Add([System.IO.Path]::Combine($private_path, "*.ps1"))
     }
 
+    $test_file = "TestResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
     $pester_params = @{
         CodeCoverage = $code_coverage.ToArray()
-        OutputFile = [System.IO.Path]::Combine($ProjectRoot, $TestFile)
+        OutputFile = [System.IO.Path]::Combine($ProjectRoot, $test_file)
         OutputFormat = "NUnitXml"
         PassThru = $true
         Path = [System.IO.Path]::Combine($ProjectRoot, "Tests")
     }
-    $TestResults = Invoke-Pester @pester_params @Verbose
+    $test_results  = Invoke-Pester @pester_params @Verbose
 
-    # In Appveyor?  Upload our tests! #Abstract this into a function?
-    If($Env:BHBuildSystem -eq 'AppVeyor') {
+    if ($env:BHBuildSystem -eq 'AppVeyor') {
         $web_client = New-Object -TypeName System.Net.WebClient
-        $web_client.UploadFIle(
+        $web_client.UploadFile(
             "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)",
-            [System.IO.Path]::Combine($ProjectRoot, $TestFile)
+            [System.IO.Path]::Combine($ProjectRoot, $test_file)
         )
     }
+    Remove-Item -LiteralPath ([System.IO.Path]::Combine($ProjectRoot, $test_file)) -Force -ErrorAction SilentlyContinue
 
-    Remove-Item -LiteralPath ([System.IO.Path]::Combine($ProjectRoot, $TestFile)) -Force -ErrorAction SilentlyContinue
-
-    # Failed tests?
-    # Need to tell psake or it will proceed to the deployment. Danger!
-    if($TestResults.FailedCount -gt 0) {
-        Write-Error "Failed '$($TestResults.FailedCount)' tests, build failed"
+    if ($test_results.FailedCount -gt 0) {
+        Write-Error "Failed '$($test_results.FailedCount)' tests, build failed"
     }
-    "`n"
+    $nl
+}
+
+Task Build -Depends Test {
+    $build_path = [System.IO.Path]::Combine($ProjectRoot, "Build")
+
+    $lines
+    "$nl`tSTATUS: Building PowerShell module with documentation"
+
+    if (Test-Path -LiteralPath $build_path) {
+        Remove-Item -LiteralPath $build_path -Force -Recurse
+    }
+    New-Item -Path $build_path -ItemType Directory > $null
+
+    # Ensure dir to store Markdown docs exists
+    $doc_path = [System.IO.Path]::Combine($ProjectRoot, 'Docs')
+    if (-not (Test-Path -LiteralPath $doc_path)) {
+        New-Item -Path $doc_path -ItemType Directory > $null
+    }
+
+    $module_name = Split-Path -Path $env:BHModulePath -Leaf
+    $manifest_file_path = [System.IO.Path]::Combine($env:BHModulePath, "$($module_name).psd1")
+    Copy-Item -LiteralPath $manifest_file_path -Destination ([System.IO.Path]::Combine($build_path, "$($module_name).psd1"))
+
+    # Read the existing module and split out the template section lines.
+    $module_file_path = [System.IO.Path]::Combine($env:BHModulePath, "$($module_name).psdm1")
+    $module_pre_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $module_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $module_post_template_lines = [System.Collections.Generic.List`1[String]]@()
+    $template_section = $false  # $false == pre, $null == template, $true == post
+    foreach ($module_file_line in (Get-Content -LiteralPath $module_file_path)) {
+        if ($module_file_line -eq '### TEMPLATED EXPORT FUNCTIONS ###') {
+            $template_section = $null
+        } elseif ($module_file_line -eq '### END TEMPLATED EXPORT FUNCTIONS ###') {
+            $template_section = $true
+        } elseif ($template_section -eq $false) {
+            $module_pre_template_lines.Add($module_file_line)
+        } elseif ($template_section -eq $true) {
+            $module_post_template_lines.Add($module_file_line)
+        }
+    }
+
+    # Read each public and private function and add it to the manifest template
+    $public_module_names = [System.Collections.Generic.List`1[String]]@()
+    $public_functions_path = [System.IO.Path]::Combine($env:BHModulePath, 'Public')
+    $private_functions_path = [System.IO.Path]::Combine($env:BHModulePath, 'Private')
+
+    $public_functions_path, $private_functions_path | ForEach-Object -Process {
+
+        if (Test-Path -LiteralPath $_) {
+            Format-FunctionWithDoc -Path ([System.IO.Path]::Combine($_, "*.ps1")) | ForEach-Object -Process {
+
+                $module_template_lines.Add($_.Function)
+                $module_template_lines.Add("")  # Add an empty newline so the functions are spaced out.
+
+                $parent = Split-Path -Path (Split-Path -Path $_.Source -Parent) -Leaf
+                if ($parent -eq 'Public') {
+                    $public_module_names.Add($_.Name)
+                    $module_doc_path = i[System.IO.Path]::Combine($doc_path, "$($_.Name).md")
+                    Set-Content -LiteralPath $module_doc_path -Value $_.Markdown
+                }
+            }
+        }
+    }
+
+    # Make sure we add an array of all the public functions and place it in our template. This is so the
+    # Export-ModuleMember line at the end exports the correct functions.
+    $module_template_lines.Add(
+        "`$public_functions = @({0}    '{1}'{0})" -f ($nl, ($public_module_names -join "',$nl    '"))
+    )
+
+    # Now build the new manifest file lines by adding the templated and post templated lines to the 1 list.
+    $module_pre_template_lines.AddRange($module_template_lines)
+    $module_pre_template_lines.AddRange($module_post_template_lines)
+    $module_file = $module_pre_template_lines -join $nl
+
+    $dest_module_path = [System.IO.Path]::Combine($build_path, "$($module_name).psdm1")
+    Set-Content -LiteralPath $dest_module_path -Value $module_file
+
+    $nl
 }

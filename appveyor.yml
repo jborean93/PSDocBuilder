@@ -18,9 +18,8 @@ build: false
 
 test_script:
 # Run tests against both PS Desktop and PS Core
-- ps: '& powershell.exe ./build.ps1'
-- ps: '& pwsh.exe ./build.ps1'
-# Build local artifacts
+- ps: . ./build.ps1
+- pwsh: . ./build.ps1
 - ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags AppVeyor
 
 before_deploy:
