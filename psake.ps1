@@ -97,14 +97,3 @@ Task Test -Depends Sanity  {
     }
     "`n"
 }
-
-Task Deploy -Depends Test {
-    $lines
-
-    $deploy_params = @{
-        Path = $ProjectRoot
-        Force = $true
-        Recurse = $false # We keep psdeploy artifacts, avoid deploying those : )
-    }
-    Invoke-PSDeploy @deploy_params @Verbose
-}
