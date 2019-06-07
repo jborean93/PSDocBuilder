@@ -1,14 +1,7 @@
 # Publish to PowerShell Gallery with this key
 environment:
-  global:
-    NuGetApiKey:
-      secure: VMvVbhuMaUTbI8WgnJH/WF7UBGwj261AgERGm25s21zQErHoIdwacoF3yd6OjIWh
-
-  # Run tests on both PowerShell 5.1 and PowerShell 6
-  matrix:
-  - PS_EXE: powershell.exe
-    DEPLOY_HOST: true
-  - PS_EXE: pwsh.exe
+  NuGetApiKey:
+    secure: VMvVbhuMaUTbI8WgnJH/WF7UBGwj261AgERGm25s21zQErHoIdwacoF3yd6OjIWh
 
 image: Visual Studio 2017
 
@@ -24,7 +17,9 @@ skip_commits:
 build: false
 
 test_script:
-- ps: '& $env:PS_EXE ./build.ps1'
+# Run tests against both PS Desktop and PS Core
+- ps: '& powershell.exe ./build.ps1'
+- ps: '& pwsh.exe ./build.ps1'
 
 before_deploy:
 - ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags Release
@@ -38,4 +33,3 @@ deploy:
   on:
     branch: master
     APPVEYOR_REPO_TAG: true
-    DEPLOY_HOST: true
