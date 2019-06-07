@@ -61,9 +61,6 @@ Function Resolve-Module {
     }
 }
 
-# Debug powershell-yaml issues
-Get-Module -ListAvailable
-
 Write-Output -InputObject "Setting up build dependencies"
 Get-PackageProvider -Name NuGet -ForceBootstrap > $null
 if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
@@ -79,8 +76,6 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'PSScriptAnalyzer',
     'powershell-yaml'
 ) | Resolve-Module
-
-Get-Module -ListAvailable
 
 Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
