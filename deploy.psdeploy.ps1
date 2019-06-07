@@ -7,9 +7,8 @@ $module_name = (Get-ChildItem -Path ([System.IO.Path]::Combine($DeploymentRoot, 
 $source_path = [System.IO.Path]::Combine($DeploymentRoot, 'Build', $module_name)
 
 $nupkg_version = $env:APPVEYOR_BUILD_VERSION
-if ($env:APPVEYOR_REPO_TAG) {
+if ((Test-Path -Path env:APPVEYOR_REPO_TAG) -and ([bool]$env:APPVEYOR_REPO_TAG)) {
     $nupkg_version = $env:APPVEYOR_REPO_TAG_NAME
-    throw "$($env:APPVEYOR_BUILD_VERSION) - $($env:APPVEYOR_REPO_TAG) - $($env:APPVEYOR_REPO_TAG_NAME) - $nupkg_version"
 }
 
 Deploy Module {
