@@ -25,7 +25,7 @@ before_deploy:
 deploy:
 - provider: GitHub
   auth_token:
-    secure: xLTg9M5bqlSITC5gJHWUD4wOqP1QPsjMQSTiWdCZI68Iflp3lemZ9Au5riRvbZl
+    secure: 5xLTg9M5bqlSITC5gJHWUD4wOqP1QPsjMQSTiWdCZI68Iflp3lemZ9Au5riRvbZl
   artifact: /.*\.nupkg/
   force_update: true
   on:

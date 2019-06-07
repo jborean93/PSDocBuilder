@@ -5,6 +5,8 @@
 
 Generate PowerShell function/cmdlet and Markdown documentation from yaml.
 
+_Note: I wrote this before I found out about [platyPS](https://github.com/PowerShell/platyPS) and while there are things that would be nice to have there this is mostly just a test repo and not planned to be maintained_
+
 
 ## Info
 
