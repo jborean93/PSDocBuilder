@@ -1,6 +1,8 @@
 # Copyright: (c) 2019, Jordan Borean (@jborean93) <jborean93@gmail.com>
 # MIT License (see LICENSE or https://opensource.org/licenses/MIT)
 
+#Requires -Module powershell-yaml
+
 Set-Variable -Name PSDocBuilderSchema -Scope Script -Option Constant -Force -Value @(
     @{
         Name = 'synopsis'

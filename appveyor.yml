@@ -3,6 +3,11 @@ environment:
   NuGetApiKey:
     secure: VMvVbhuMaUTbI8WgnJH/WF7UBGwj261AgERGm25s21zQErHoIdwacoF3yd6OjIWh
 
+# Run tests on both PowerShell 5.1 and PowerShell 6
+matrix:
+- PS_EXE: powershell.exe
+- PS_EXE: pwsh.exe
+
 image: Visual Studio 2019
 
 # specify the cloned folder in upper case so the PSGallery upload is in this format
@@ -17,4 +22,4 @@ skip_commits:
 build: false
 
 test_script:
-- ps: . .\build.ps1
+- ps: Start-Process -FilePath $env:PS_EXE -ArgumentList '-File build.ps1'
