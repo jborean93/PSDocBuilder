@@ -7,6 +7,7 @@ environment:
   # Run tests on both PowerShell 5.1 and PowerShell 6
   matrix:
   - PS_EXE: powershell.exe
+    DEPLOY_HOST: true
   - PS_EXE: pwsh.exe
 
 image: Visual Studio 2017
@@ -37,3 +38,4 @@ deploy:
   on:
     branch: master
     APPVEYOR_REPO_TAG: true
+    DEPLOY_HOST: true

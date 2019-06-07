@@ -136,20 +136,6 @@ if ($is_release) {
 # Verify we can import the module
 Import-Module -Name $module_path -Force
 
-# Publish to AppVeyor if we're in AppVeyor
-if($env:BHBuildSystem -eq 'AppVeyor') {
-    Deploy DeveloperBuild {
-        By AppVeyorModule {
-            FromSource $module_path
-            To AppVeyor
-            WithOptions @{
-                SourceIsAbsolute = $true
-                Version = $env:APPVEYOR_BUILD_VERSION
-            }
-        }
-    }
-}
-
 # Publish to the PowerShell Gallery if the 'Release' tag is set
 if ($is_release) {
     Deploy Module {
@@ -159,6 +145,18 @@ if ($is_release) {
             WithOptions @{
                 ApiKey = $ENV:NugetApiKey
                 SourceIsAbsolute = $true
+            }
+        }
+    }
+} elseif ($env:BHBuildSystem -eq 'AppVeyor') {
+    # Publish to AppVeyor if we're in AppVeyor
+    Deploy DeveloperBuild {
+        By AppVeyorModule {
+            FromSource $module_path
+            To AppVeyor
+            WithOptions @{
+                SourceIsAbsolute = $true
+                Version = $env:APPVEYOR_BUILD_VERSION
             }
         }
     }
