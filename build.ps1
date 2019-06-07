@@ -61,6 +61,14 @@ Function Resolve-Module {
     }
 }
 
+# Debug powershell-yaml issues
+$assemblies = [System.AppDomain]::CurrentDomain.GetAssemblies()
+$yamlDotNet = $assemblies | where-object Location -Match YamlDotNet.dll
+if ($yamlDotNet) {
+    $yamlDotNet | fl *
+}
+$assemblies
+
 Write-Output -InputObject "Setting up build dependencies"
 Get-PackageProvider -Name NuGet -ForceBootstrap > $null
 if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
@@ -76,8 +84,6 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
     'PSScriptAnalyzer',
     'powershell-yaml'
 ) | Resolve-Module
-
-Import-Module -Name powershell-yml -Force
 
 Write-Output -InputObject "Setting build environment variables"
 Set-BuildEnvironment -ErrorAction SilentlyContinue
