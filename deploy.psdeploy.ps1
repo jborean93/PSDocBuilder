@@ -128,30 +128,13 @@ New-Item -Path $build_path -ItemType Directory > $null
 Copy-Item -LiteralPath $env:BHModulePath -Destination $build_path -Recurse
 $module_path = Optimize-Project -Path $build_path -DocPath $doc_path
 
+$is_release = "Release" -in $Tags
+if ($is_release) {
+    Write-Output -InputObject "TODO: Sign the module"
+}
+
 # Verify we can import the module
 Import-Module -Name $module_path -Force
-
-# Publish to gallery with a few restrictions
-if ($env:BHBuildSystem -ne 'Unknown' -and
-    $env:BHBranchName -eq "master" -and
-    $env:APPVEYOR_REPO_TAG -eq "true") {
-
-    Deploy Module {
-        By PSGalleryModule {
-            FromSource $module_path
-            To PSGallery
-            WithOptions @{
-                ApiKey = $ENV:NugetApiKey
-                SourceIsAbsolute = $true
-            }
-        }
-    }
-} else {
-    "Skipping deployment: To deploy, ensure that...`n" +
-    "`t* You are in a known build system (Current: $ENV:BHBuildSystem)`n" +
-    "`t* You are committing to the master branch (Current: $ENV:BHBranchName) `n" +
-    "`t* The commit is a tagged release from github with APPVEYOR_REPO_TAG=true (Current: $ENV:APPVEYOR_REPO_TAG)" | Write-Host
-}
 
 # Publish to AppVeyor if we're in AppVeyor
 if($env:BHBuildSystem -eq 'AppVeyor') {
@@ -162,6 +145,20 @@ if($env:BHBuildSystem -eq 'AppVeyor') {
             WithOptions @{
                 SourceIsAbsolute = $true
                 Version = $env:APPVEYOR_BUILD_VERSION
+            }
+        }
+    }
+}
+
+# Publish to the PowerShell Gallery if the 'Release' tag is set
+if ($is_release) {
+    Deploy Module {
+        By PSGalleryModule {
+            FromSource $module_path
+            To PSGallery
+            WithOptions @{
+                ApiKey = $ENV:NugetApiKey
+                SourceIsAbsolute = $true
             }
         }
     }
