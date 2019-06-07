@@ -4,13 +4,18 @@
 $module_name = (Get-ChildItem -Path ([System.IO.Path]::Combine($DeploymentRoot, 'Build', '*', '*.psd1'))).BaseName
 $source_path = [System.IO.Path]::Combine($DeploymentRoot, 'Build', $module_name)
 
+$nupkg_version = $env:APPVEYOR_BUILD_VERSION
+if ($env:APPVEYOR_REPO_TAG) {
+    $nupkg_version = $env:APPVEYOR_REPO_TAG_NAME
+}
+
 Deploy Module {
     By AppVeyorModule {
         FromSource $source_path
         To AppVeyor
         WithOptions @{
             SourceIsAbsolute = $true
-            Version = $env:APPVEYOR_BUILD_VERSION
+            Version = $nupkg_version
         }
         Tagged AppVeyor
     }
