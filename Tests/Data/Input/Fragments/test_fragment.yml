@@ -1,0 +1,37 @@
+---
+parameters:
+- name: Parameter1
+  description: The description for Parameter1.
+- name: Parameter2
+  description:
+  - A long winded description for Parameter1 that spans across multiple lines. This should also fit inside one
+    paragraph because it's in one yaml list entry.
+  - A new paragraph should be set for this entry because it is in another yaml list entry.
+- name: Parameter3
+  description:
+  - The third parameter, nothing special.
+- name: Parameter4
+  description:
+  - The fourth parameter.
+- name: Parameter5
+  description:
+  - The fifth parameter.
+inputs:
+- name: Parameter1
+  description:
+  - A description for the first input parameter, this should only have the ByVal input flags.
+- name: Parameter2
+  description:
+  - A description for the 2nd parameter input. This should have both the `ByVal` and `ByPropertyName` flags set. I
+    am also going to add a further sentance to this description.
+- name: Parameter3
+  description: A description for the 3rd input parameter.
+- name: Parameter5
+  description: Tests out multiple Parameter entries for a parameter.
+notes:
+- Some extended fragment note that is added to the end of the string.
+links:
+- link: https://www.google.com
+- link: https://www.google.com
+  text: Google's Website
+- link: C(Another-Function)
