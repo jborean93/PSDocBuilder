@@ -125,8 +125,10 @@ if ([Net.SecurityProtocolType].GetMember("Tls12").Count -gt 0) {
 [Net.ServicePointManager]::SecurityProtocol = $security_protocols
 
 # Run the script to load the cmdlets and get the URI of the nupkg
-$install_script_uri = 'https://gist.github.com/jborean93/e0cb0e3aabeaa1701e41f2304b023366/raw/Install-ModuleNupkg.ps1'
-$install_script = (Invoke-WebRequest -Uri $install_script_uri).Content
+$invoke_wr_params = @{
+    Uri = 'https://gist.github.com/jborean93/e0cb0e3aabeaa1701e41f2304b023366/raw/Install-ModuleNupkg.ps1'
+    UseBasicParsing = $true
+$install_script = (Invoke-WebRequest @invoke_wr_params).Content
 
 ################################################################################################
 # Make sure you check the script at the URI first and are happy with the script before running #
@@ -140,7 +142,7 @@ $gallery_uri = Get-PSGalleryNupkgUri -Name PSDocBuilder
 Install-PowerShellNupkg -Uri $gallery_uri
 ```
 
-_note: I can't stress this enough, make sure you review the script specified by `$install_script_uri` before running the above_
+_Note: I can't stress this enough, make sure you review the script specified by Uri` before running the above_
 
 If you wish to remove a module installed with the above method you can run;
 
