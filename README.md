@@ -99,7 +99,7 @@ This is installed by default with PowerShell 5 but can be added on PowerShell
 
 Once installed, you can install this module by running;
 
-```
+```powershell
 # Install for all users
 Install-Module -Name PSDocBuilder
 
@@ -111,15 +111,43 @@ If you wish to remove the module, just run
 `Uninstall-Module -Name PSDocBuilder`.
 
 If you cannot use PowerShellGet, you can still install the module manually,
-here are some basic steps on how to do this;
+by using the script cmdlets in the script [Install-ModuleNupkg.ps1](https://gist.github.com/jborean93/e0cb0e3aabeaa1701e41f2304b023366).
 
-1. Download the latext zip from GitHub [here](https://github.com/jborean93/PSDocBuilder/releases/latest)
-2. Extract the zip
-3. Copy the folder `PSDocBuilder` inside the zip to a path that is set in `$env:PSModulePath`. By default this could be `C:\Program Files\WindowsPowerShell\Modules` or `C:\Users\<user>\Documents\WindowsPowerShell\Modules`
-4. Reopen PowerShell and unblock the downloaded files with `$path = (Get-Module -Name PSDocBuilder -ListAvailable).ModuleBase; Unblock-File -Path $path\*.psd1;`
-5. Reopen PowerShell one more time and you can start using the cmdlets
+```powershell
+# Enable TLS1.1/TLS1.2 if they're available but disabled (eg. .NET 4.5)
+$security_protocols = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::SystemDefault
+if ([Net.SecurityProtocolType].GetMember("Tls11").Count -gt 0) {
+    $security_protocols = $security_protocols -bor [Net.SecurityProtocolType]::Tls11
+}
+if ([Net.SecurityProtocolType].GetMember("Tls12").Count -gt 0) {
+    $security_protocols = $security_protocols -bor [Net.SecurityProtocolType]::Tls12
+}
+[Net.ServicePointManager]::SecurityProtocol = $security_protocols
 
-_Note: You are not limited to installing the module to those example paths, you can add a new entry to the environment variable `PSModulePath` if you want to use another path._
+# Run the script to load the cmdlets and get the URI of the nupkg
+$install_script_uri = 'https://gist.github.com/jborean93/e0cb0e3aabeaa1701e41f2304b023366/raw/Install-ModuleNupkg.ps1'
+$install_script = (Invoke-WebRequest -Uri $install_script_uri).Content
+
+################################################################################################
+# Make sure you check the script at the URI first and are happy with the script before running #
+################################################################################################
+Invoke-Expression -Command $install_script
+
+# Get the URI to the nupkg on the gallery
+$gallery_uri = Get-PSGalleryNupkgUri -Name PSDocBuilder
+
+# Install the nupkg for the current user, add '-Scope AllUsers' to install for all users (requires admin privileges)
+Install-PowerShellNupkg -Uri $gallery_uri
+```
+
+_note: I can't stress this enough, make sure you review the script specified by `$install_script_uri` before running the above_
+
+If you wish to remove a module installed with the above method you can run;
+
+```powershell
+$module_path = (Get-Module -Name PSDocBuilder -ListAvailable).ModuleBase
+Remove-Item -LiteralPath $module_path -Force -Recurse
+```
 
 
 ## Contributing
