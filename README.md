@@ -128,6 +128,7 @@ if ([Net.SecurityProtocolType].GetMember("Tls12").Count -gt 0) {
 $invoke_wr_params = @{
     Uri = 'https://gist.github.com/jborean93/e0cb0e3aabeaa1701e41f2304b023366/raw/Install-ModuleNupkg.ps1'
     UseBasicParsing = $true
+}
 $install_script = (Invoke-WebRequest @invoke_wr_params).Content
 
 ################################################################################################
@@ -135,11 +136,14 @@ $install_script = (Invoke-WebRequest @invoke_wr_params).Content
 ################################################################################################
 Invoke-Expression -Command $install_script
 
-# Get the URI to the nupkg on the gallery
-$gallery_uri = Get-PSGalleryNupkgUri -Name PSDocBuilder
+foreach ($package in @('powershell-yaml', 'PSDocBuilder')) {
+    # Get the URI to the nupkg on the gallery
+    $gallery_uri = Get-PSGalleryNupkgUri -Name $package
 
-# Install the nupkg for the current user, add '-Scope AllUsers' to install for all users (requires admin privileges)
-Install-PowerShellNupkg -Uri $gallery_uri
+    # Install the nupkg for the current user, add '-Scope AllUsers' to install
+    # for all users (requires admin privileges)
+    Install-PowerShellNupkg -Uri $gallery_uri
+}
 ```
 
 _Note: I can't stress this enough, make sure you review the script specified by Uri` before running the above_
