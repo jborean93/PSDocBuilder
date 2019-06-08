@@ -8,7 +8,12 @@ $source_path = [System.IO.Path]::Combine($DeploymentRoot, 'Build', $module_name)
 
 $nupkg_version = $env:APPVEYOR_BUILD_VERSION
 if ((Test-Path -Path env:APPVEYOR_REPO_TAG) -and ([System.Boolean]::Parse($env:APPVEYOR_REPO_TAG))) {
-    $nupkg_version = $env:APPVEYOR_REPO_TAG_NAME
+    $tag_name = $env:APPVEYOR_REPO_TAG_NAME
+    if ($tag_name[0] -eq 'v') {
+        $nupkg_version = $tag_name.Substring(1)
+    } else {
+        $nupkg_version = $tag_name
+    }
 }
 
 Deploy Module {

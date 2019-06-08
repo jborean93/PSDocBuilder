@@ -24,7 +24,7 @@ Task Init {
     $lines
     Set-Location -LiteralPath $ProjectRoot
     "Build System Details:"
-    Get-Item -Path env:BH*
+    Get-Item -Path env:BH*, env:APPVEYOR*
 
     $nl
 }

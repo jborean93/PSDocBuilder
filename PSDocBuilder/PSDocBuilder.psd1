@@ -3,7 +3,7 @@
 
 @{
     RootModule = 'PSDocBuilder.psm1'
-    ModuleVersion = '0.1.3'
+    ModuleVersion = '0.1.4'
     GUID = '80a19133-7172-4e4b-a687-2e6b8005ab0e'
     Author = 'Jordan Borean'
     Copyright = 'Copyright (c) 2019 by Jordan Borean, Red Hat, licensed under MIT.'
