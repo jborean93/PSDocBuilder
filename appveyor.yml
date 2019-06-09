@@ -13,20 +13,24 @@ skip_commits:
 
 build: false
 
+install:
+- cmd: choco.exe install codecov --yes
+
 test_script:
 - ps: . ./build.ps1
 - pwsh: . ./build.ps1
 - ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags AppVeyor
 
-after_test:
-- ps: |
-    $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
-    Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
-    bash codecov.sh -f coverage.json
+#after_test:
+#- ps: |
+#    $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+#    Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+#    bash codecov.sh -f coverage.json
 
 before_deploy:
 # Deploys the nupkg to PSGallery
-- ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags Release
+- cmd: codecov.exe -f "CodeCoverage.xml"
+#- ps: Invoke-PSDeploy -Path ./deploy.psdeploy.ps1 -Recurse $false -Force -Tags Release
 
 deploy:
 - provider: GitHub

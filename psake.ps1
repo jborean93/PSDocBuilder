@@ -66,13 +66,14 @@ Task Test -Depends Sanity {
     $test_file = "TestResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
     $pester_params = @{
         CodeCoverage = $code_coverage.ToArray()
+        CodeCoverageOutputFile = 'CodeCoverage.xml'
         OutputFile = [System.IO.Path]::Combine($ProjectRoot, $test_file)
         OutputFormat = "NUnitXml"
         PassThru = $true
         Path = [System.IO.Path]::Combine($ProjectRoot, "Tests")
     }
     $test_results  = Invoke-Pester @pester_params @Verbose
-    Export-CodeCovIoJson -CodeCoverage $test_results.CodeCoverage -RepoRoot $ProjectRoot -Path coverage.json
+    #Export-CodeCovIoJson -CodeCoverage $test_results.CodeCoverage -RepoRoot $ProjectRoot -Path coverage.json
 
     if ($env:BHBuildSystem -eq 'AppVeyor') {
         $web_client = New-Object -TypeName System.Net.WebClient
