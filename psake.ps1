@@ -72,6 +72,7 @@ Task Test -Depends Sanity {
         Path = [System.IO.Path]::Combine($ProjectRoot, "Tests")
     }
     $test_results  = Invoke-Pester @pester_params @Verbose
+    Export-CodeCovIoJson -CodeCoverage $test_results.CodeCoverage -RepoRoot $ProjectRoot -Path coverage.json
 
     if ($env:BHBuildSystem -eq 'AppVeyor') {
         $web_client = New-Object -TypeName System.Net.WebClient
