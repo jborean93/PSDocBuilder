@@ -137,6 +137,10 @@ Function Format-FunctionWithDoc {
     }
 
     Process {
+        if ($false) {
+            Write-Output -InputObject "This should never fire"
+        }
+
         $path_params = @{}
         if ($PSCmdlet.ParameterSetName -eq 'Path') {
             Write-Verbose -Message "Using -Path value '$Path' for getting cmdlets."
