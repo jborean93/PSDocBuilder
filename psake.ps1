@@ -64,10 +64,8 @@ Task Test -Depends Sanity {
     }
 
     $test_file = "TestResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
-    $code_coverage_file = "CoverageResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
     $pester_params = @{
         CodeCoverage = $code_coverage.ToArray()
-        CodeCoverageOutputFile = $code_coverage_file
         OutputFile = [System.IO.Path]::Combine($ProjectRoot, $test_file)
         OutputFormat = "NUnitXml"
         PassThru = $true
@@ -88,20 +86,24 @@ Task Test -Depends Sanity {
         Write-Error "Failed '$($test_results.FailedCount)' tests, build failed"
     }
 
-    $code_coverage_file = [System.IO.Path]::Combine($ProjectRoot, $code_coverage_file)
     if (Get-Command -Name codecov.exe -ErrorAction Ignore) {
         "$nl`tSTATUS: Uploading code coverage results"
-        $upload_args = [System.Collections.Generic.List]@(
+
+        # The file that is uploaded to CodeCov.io needs to be converted first.
+        $coverage_file = [System.IO.Path]::Combine($ProjectRoot, "coverage.json")
+        Export-CodeCovIoJson -CodeCoverage $test_results.CodeCoverage -RepoRoot $ProjectRoot -Path $coverage_file
+
+        $upload_args = [System.Collections.Generic.List`1[System.String]]@(
             '-f',
-            "`"$code_coverage_file`"",
+            "`"$coverage_file`"",
             "-n",
             "`"PowerShell-$($PSVersionTable.PSVersion.ToString())`""
         )
 
         # TODO: Check for token and add -t
         &codecov.exe $upload_args
+        Remove-Item -LiteralPath $coverage_file -Force
     }
-    Remove-Item -LiteralPath $code_coverage_file -Force
     $nl
 }
 
