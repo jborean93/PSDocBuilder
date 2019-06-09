@@ -64,16 +64,16 @@ Task Test -Depends Sanity {
     }
 
     $test_file = "TestResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
+    $code_coverage_file = "CoverageResults_PS$PSVersion`_$(Get-Date -UFormat "%Y%m%d-%H%M%S").xml"
     $pester_params = @{
         CodeCoverage = $code_coverage.ToArray()
-        CodeCoverageOutputFile = 'CodeCoverage.xml'
+        CodeCoverageOutputFile = $code_coverage_file
         OutputFile = [System.IO.Path]::Combine($ProjectRoot, $test_file)
         OutputFormat = "NUnitXml"
         PassThru = $true
         Path = [System.IO.Path]::Combine($ProjectRoot, "Tests")
     }
     $test_results  = Invoke-Pester @pester_params @Verbose
-    #Export-CodeCovIoJson -CodeCoverage $test_results.CodeCoverage -RepoRoot $ProjectRoot -Path coverage.json
 
     if ($env:BHBuildSystem -eq 'AppVeyor') {
         $web_client = New-Object -TypeName System.Net.WebClient
@@ -87,6 +87,13 @@ Task Test -Depends Sanity {
     if ($test_results.FailedCount -gt 0) {
         Write-Error "Failed '$($test_results.FailedCount)' tests, build failed"
     }
+
+    if (Get-Command -Name codecov.exe -ErrorAction Ignore) {
+        # TODO: Check for token and add -t
+        "$nl`tSTATUS: Uploading code coverage results"
+        &codecov.exe -f "$code_coverage_file" -n "PowerShell-$($PSVersion.PSVersion.ToString())"
+    }
+    Remove-Item -LiteralPath ([System.IO.Path]::Combine($ProjectRoot, $code_coverage_file)) -Force
     $nl
 }
 
