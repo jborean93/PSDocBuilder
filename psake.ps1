@@ -88,12 +88,20 @@ Task Test -Depends Sanity {
         Write-Error "Failed '$($test_results.FailedCount)' tests, build failed"
     }
 
+    $code_coverage_file = [System.IO.Path]::Combine($ProjectRoot, $code_coverage_file)
     if (Get-Command -Name codecov.exe -ErrorAction Ignore) {
-        # TODO: Check for token and add -t
         "$nl`tSTATUS: Uploading code coverage results"
-        &codecov.exe -f "$code_coverage_file" -n "PowerShell-$($PSVersion.PSVersion.ToString())"
+        $upload_args = [System.Collections.Generic.List]@(
+            '-f',
+            "`"$code_coverage_file`"",
+            "-n",
+            "`"PowerShell-$($PSVersionTable.PSVersion.ToString())`""
+        )
+
+        # TODO: Check for token and add -t
+        &codecov.exe $upload_args
     }
-    Remove-Item -LiteralPath ([System.IO.Path]::Combine($ProjectRoot, $code_coverage_file)) -Force
+    Remove-Item -LiteralPath $code_coverage_file -Force
     $nl
 }
 
