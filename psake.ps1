@@ -86,8 +86,19 @@ Task Test -Depends Sanity {
         Write-Error "Failed '$($test_results.FailedCount)' tests, build failed"
     }
 
-    if (Get-Command -Name codecov.exe -ErrorAction Ignore) {
-        "$nl`tSTATUS: Uploading code coverage results"
+    if ($env:BHBuildSystem -eq 'AppVeyor' -and (Get-Command -Name codecov.exe -ErrorAction Ignore)) {
+        $ps_version = $PSVersionTable.PSVersion.ToString()
+        $ps_edition = 'Desktop'
+        if ($PSVersionTable.ContainsKey('PSEdition')) {
+            $ps_edition = $PSVersionTable.PSEdition
+        }
+        $ps_platform = 'Win32NT'
+        if ($PSVersionTable.ContainsKey('Platform')) {
+            $ps_platform = $PSVersionTable.Platform
+        }
+        $coverage_id = "PowerShell-$ps_edition-$ps_version-$ps_platform"
+
+        "$nl`tSTATUS: Uploading code coverage results with the ID: $coverage_id"
 
         # The file that is uploaded to CodeCov.io needs to be converted first.
         $coverage_file = [System.IO.Path]::Combine($ProjectRoot, "coverage.json")
@@ -97,10 +108,9 @@ Task Test -Depends Sanity {
             '-f',
             "`"$coverage_file`"",
             "-n",
-            "`"PowerShell-$($PSVersionTable.PSVersion.ToString())`""
+            "`"$coverage_id`""
         )
 
-        # TODO: Check for token and add -t
         &codecov.exe $upload_args
         Remove-Item -LiteralPath $coverage_file -Force
     }
