@@ -2,6 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ocurnrxf16dkwsnk?svg=true)](https://ci.appveyor.com/project/jborean93/psdocbuilder)
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/PSDocBuilder.svg)](https://www.powershellgallery.com/packages/PSDocBuilder)
+[![codecov](https://codecov.io/gh/jborean93/PSDocBuilder/branch/master/graph/badge.svg)](https://codecov.io/gh/jborean93/PSDocBuilder)
 
 Generate PowerShell function/cmdlet and Markdown documentation from yaml.
 

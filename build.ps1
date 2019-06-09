@@ -70,6 +70,7 @@ if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne "Trusted") {
 
 @(
     'Psake',
+    'PSCodeCovIo',
     'PSDeploy',
     'Pester',
     'BuildHelpers',

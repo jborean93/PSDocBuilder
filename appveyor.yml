@@ -13,6 +13,9 @@ skip_commits:
 
 build: false
 
+install:
+- cmd: choco.exe install codecov --yes
+
 test_script:
 - ps: . ./build.ps1
 - pwsh: . ./build.ps1
